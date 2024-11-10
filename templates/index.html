@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Neural Network Training Monitor</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .plot {
+            margin-bottom: 20px;
+        }
+        .metrics {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 8px;
+        }
+        .metric-item {
+            text-align: center;
+        }
+        .results {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .result-item {
+            text-align: center;
+        }
+        .result-item img {
+            width: 100px;
+            height: 100px;
+        }
+        #test-results {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Neural Network Training Monitor</h1>
+        <div class="metrics">
+            <div class="metric-item">
+                <h3>Current Loss</h3>
+                <div id="current-loss">-</div>
+            </div>
+            <div class="metric-item">
+                <h3>Current Accuracy</h3>
+                <div id="current-acc">-</div>
+            </div>
+        </div>
+        <div id="combined-plot" class="plot"></div>
+        <div id="test-results">
+            <h2>Test Results</h2>
+            <div class="results" id="results-grid"></div>
+        </div>
+    </div>
+
+    <script>
+        let lastLoss = null;
+        let lastAcc = null;
+
+        function updateMetricsAndPlots() {
+            fetch('/get_training_data')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.train_loss.length > 0) {
+                        const currentLoss = data.train_loss[data.train_loss.length - 1];
+                        const currentAcc = data.train_acc[data.train_acc.length - 1];
+                        
+                        document.getElementById('current-loss').textContent = currentLoss.toFixed(4);
+                        document.getElementById('current-acc').textContent = (currentAcc * 100).toFixed(2) + '%';
+
+                        lastLoss = currentLoss;
+                        lastAcc = currentAcc;
+
+                        // Update plots
+                        const traces = [
+                            {
+                                y: data.train_loss,
+                                name: 'Training Loss',
+                                type: 'scatter',
+                                line: {color: '#1f77b4'}
+                            },
+                            {
+                                y: data.val_loss,
+                                name: 'Validation Loss',
+                                type: 'scatter',
+                                line: {color: '#ff7f0e'}
+                            },
+                            {
+                                y: data.train_acc,
+                                name: 'Training Accuracy',
+                                type: 'scatter',
+                                yaxis: 'y2',
+                                line: {color: '#2ca02c'}
+                            },
+                            {
+                                y: data.val_acc,
+                                name: 'Validation Accuracy',
+                                type: 'scatter',
+                                yaxis: 'y2',
+                                line: {color: '#d62728'}
+                            }
+                        ];
+
+                        const layout = {
+                            title: 'Training Progress',
+                            yaxis: {
+                                title: 'Loss',
+                                side: 'left'
+                            },
+                            yaxis2: {
+                                title: 'Accuracy',
+                                side: 'right',
+                                overlaying: 'y',
+                                range: [0, 1]
+                            },
+                            legend: {
+                                x: 1.1,
+                                y: 1
+                            }
+                        };
+
+                        Plotly.newPlot('combined-plot', traces, layout);
+                    }
+                });
+        }
+
+        function checkTestResults() {
+            fetch('/get_test_results')
+                .then(response => response.json())
+                .then(data => {
+                    const testResultsDiv = document.getElementById('test-results');
+                    if (data.images && data.images.length > 0) {
+                        testResultsDiv.style.display = 'block';
+                        const resultsGrid = document.getElementById('results-grid');
+                        resultsGrid.innerHTML = '';
+                        
+                        for (let i = 0; i < data.images.length; i++) {
+                            const div = document.createElement('div');
+                            div.className = 'result-item';
+                            div.innerHTML = `
+                                <img src="data:image/png;base64,${data.images[i]}">
+                                <p>Predicted: ${data.predictions[i]}</p>
+                                <p>Actual: ${data.labels[i]}</p>
+                            `;
+                            resultsGrid.appendChild(div);
+                        }
+                    } else {
+                        testResultsDiv.style.display = 'none';
+                    }
+                });
+        }
+
+        // Update metrics and plots every second
+        setInterval(updateMetricsAndPlots, 1000);
+        
+        // Check for test results every second
+        setInterval(checkTestResults, 1000);
+    </script>
+</body>
+</html> 
