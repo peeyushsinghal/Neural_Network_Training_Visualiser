@@ -39,11 +39,27 @@
         #test-results {
             display: none;
         }
+        .status-label {
+            text-align: center;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+            display: none;
+        }
+        .status-progress {
+            background-color: #e3f2fd;
+        }
+        .status-complete {
+            background-color: #c8e6c9;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Neural Network Training Monitor</h1>
+        <div class="status-label status-progress" id="status-progress">Training in Progress</div>
+        <div class="status-label status-complete" id="status-complete">Training Completed</div>
         <div class="metrics">
             <div class="metric-item">
                 <h3>Current Loss</h3>
@@ -64,17 +80,33 @@
     <script>
         let lastLoss = null;
         let lastAcc = null;
+        let trainingStarted = false;
 
         function updateMetricsAndPlots() {
             fetch('/get_training_data')
                 .then(response => response.json())
                 .then(data => {
                     if (data.train_loss.length > 0) {
+                        if (!trainingStarted) {
+                            trainingStarted = true;
+                            document.getElementById('status-progress').style.display = 'block';
+                            document.getElementById('status-complete').style.display = 'none';
+                        }
+
                         const currentLoss = data.train_loss[data.train_loss.length - 1];
                         const currentAcc = data.train_acc[data.train_acc.length - 1];
                         
                         document.getElementById('current-loss').textContent = currentLoss.toFixed(4);
                         document.getElementById('current-acc').textContent = (currentAcc * 100).toFixed(2) + '%';
+
+                        // Check actual training status
+                        if (data.is_training_complete) {
+                            document.getElementById('status-progress').style.display = 'none';
+                            document.getElementById('status-complete').style.display = 'block';
+                        } else {
+                            document.getElementById('status-progress').style.display = 'block';
+                            document.getElementById('status-complete').style.display = 'none';
+                        }
 
                         lastLoss = currentLoss;
                         lastAcc = currentAcc;
