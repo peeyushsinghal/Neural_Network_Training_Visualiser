@@ -1,6 +1,6 @@
-# MNIST CNN Training Visualizer
+# Fashion MNIST CNN Training Visualizer
 
-A real-time visualization tool for monitoring CNN training on the MNIST dataset. Features live training metrics, loss/accuracy curves, and test predictions visualization.
+A real-time visualization tool for monitoring CNN training on the Fashion MNIST dataset. Features live training metrics, loss/accuracy curves, and test predictions visualization.
 
 <img src="NNTrainingMonitor.png" width="600">
 
@@ -24,7 +24,7 @@ pip install -r requirements.txt
 1. Clone the repository:
 ```bash
 git clone <repository-url>
-cd mnist-cnn-visualizer
+cd fashion-mnist-visualizer
 ```
 
 2. Start the visualization server:
@@ -42,15 +42,31 @@ python main.py
 http://localhost:5000
 ```
 
+## Dataset
+
+Fashion MNIST consists of 10 classes:
+- T-shirt/top
+- Trouser
+- Pullover
+- Dress
+- Coat
+- Sandal
+- Shirt
+- Sneaker
+- Bag
+- Ankle boot
+
+Each image is a 28x28 grayscale image of a fashion item.
+
 ## Model Architecture
 
-4-layer CNN optimized for MNIST:
+4-layer CNN optimized for Fashion MNIST:
 - Input: 28x28 grayscale images
 - Conv1: 32 filters, 3x3 kernel, ReLU, MaxPool
 - Conv2: 64 filters, 3x3 kernel, ReLU, MaxPool
 - Conv3: 128 filters, 3x3 kernel, ReLU, MaxPool
 - Conv4: 256 filters, 3x3 kernel, ReLU, AdaptiveAvgPool
-- Output: 10 classes (digits 0-9)
+- Output: 10 classes (fashion items)
 
 ## Training Parameters
 
@@ -64,7 +80,6 @@ http://localhost:5000
 
 ```
 ├── README.md           # Project documentation
-├── HowToDo.md          # How to do run the project
 ├── requirements.txt    # Project dependencies
 ├── main.py            # Training script
 ├── model.py           # CNN architecture
@@ -83,7 +98,7 @@ http://localhost:5000
 
 2. **Test Results**
    - Displays 10 random test images
-   - Shows predicted vs actual labels
+   - Shows predicted vs actual fashion items
    - Updates automatically after training
 
 3. **GPU Support**
