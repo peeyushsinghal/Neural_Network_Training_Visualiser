@@ -11,6 +11,11 @@ import numpy as np
 from model import MNISTNet
 from tqdm import tqdm
 import os
+import requests
+
+# Class labels for Fashion MNIST
+CLASSES = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
+           'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
 
 # Clear previous logs
 def clear_logs():
@@ -36,11 +41,11 @@ if torch.cuda.is_available():
 print("Loading datasets...")
 transform = transforms.Compose([
     transforms.ToTensor(),
-    transforms.Normalize((0.1307,), (0.3081,))
+    transforms.Normalize((0.2860,), (0.3530,))  # Fashion MNIST mean and std
 ])
 
-train_dataset = datasets.MNIST('./data', train=True, download=True, transform=transform)
-test_dataset = datasets.MNIST('./data', train=False, transform=transform)
+train_dataset = datasets.FashionMNIST('./data', train=True, download=True, transform=transform)
+test_dataset = datasets.FashionMNIST('./data', train=False, transform=transform)
 
 train_loader = DataLoader(train_dataset, batch_size=512, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=512)
@@ -48,7 +53,7 @@ print(f"Dataset loaded. Training samples: {len(train_dataset)}, Test samples: {l
 
 # Initialize model, loss function, and optimizer
 print("Initializing model...")
-model = MNISTNet().to(device)
+model = MNISTNet(layer_sizes=[32, 64, 128, 256]).to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
@@ -132,6 +137,9 @@ for epoch in range(num_epochs):
 
 print("Training completed!")
 
+# Signal to server that training is complete
+requests.get('http://localhost:5000/set_training_complete')
+
 # Generate test results on 10 random images
 print("Generating test results...")
 def generate_test_results():
@@ -139,7 +147,8 @@ def generate_test_results():
     test_results = {
         'images': [],
         'predictions': [],
-        'labels': []
+        'labels': [],
+        'class_names': []  # Added class names
     }
     
     # Get 10 random test samples
@@ -165,8 +174,9 @@ def generate_test_results():
             img_str = base64.b64encode(buf.getvalue()).decode('utf-8')
             
             test_results['images'].append(img_str)
-            test_results['predictions'].append(int(pred))
-            test_results['labels'].append(int(label))
+            test_results['predictions'].append(CLASSES[pred])  # Use class name instead of index
+            test_results['labels'].append(CLASSES[label])      # Use class name instead of index
+            test_results['class_names'] = CLASSES  # Store class names for reference
     
     with open('test_results.json', 'w') as f:
         json.dump(test_results, f)
